@@ -1,0 +1,234 @@
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+<script src="//unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vee-validate@latest/dist/vee-validate.js"></script>
+
+
+<!--page title-->
+<div class="dzsparallaxer auto-init height-is-based-on-content " data-options='{   direction: "reverse"}'>
+    <div class="divimage dzsparallaxer--target " style="width: 101%; height: 130%; background-image: url(/Content/images/service3.jpg)">
+    </div>
+
+    <div class="container pt100">
+        <div class="row">
+            <div class="col-md-8 ml-auto mr-auto wow bounceIn" data-wow-delay=".2s">
+                <h3 class="h3 mb30 text-center pt100 pb100 font300 text-white">Create your account</h3>
+            </div>
+        </div>
+    </div>
+
+</div><!--parallax-->
+<!--/.page-title-->
+<div class='container pb50 pt50-md' id="vueECRegister">
+    <div class='row'>
+        <div class='col-md-6 col-lg-5 mr-auto ml-auto'>
+            <div class='card card-account'>
+                <div class='card-body'>
+                    <form role="form" v-on:submit.prevent="onSubmit()">
+                        <div class='form-group'>
+                            <label for='firstName'>First Name</label>
+                            <input v-validate="{required: true, min:2, max:100}" v-model="registerForm.firstName"
+                                   v-bind:class="{error:errors.has('First Name')}"
+                                   name="First Name" id='firstName' type='text' class='form-control' placeholder='First Name'>
+                            <span v-show="errors.has('First Name')" class="help is-danger" v-cloak>{{ errors.first('First Name') }}</span>
+                        </div>
+                        <div class='form-group'>
+                            <label for='lastName'>Last Name</label>
+                            <input v-validate="{required: true, min:2, max:100}" v-model="registerForm.lastName"
+                                   v-bind:class="{error :errors.has('Last Name')}"
+                                   name="Last Name" id='lastName' type='text' class='form-control' placeholder='Last Name'>
+                            <span v-show="errors.has('Last Name')" class="help is-danger" v-cloak>{{ errors.first('Last Name') }}</span>
+                        </div>
+                        <div class='form-group'>
+                            <label for='email'>Email</label>
+                            <input v-validate="{required: true, email:true}" v-model="registerForm.email"
+                                   v-bind:class="{error :errors.has('emailReg')}"
+                                   name="emailReg" id='emailReg' type='text' class='form-control' placeholder='Email' :disabled="'@Model.Item' !== ''">
+                            <span v-show="errors.has('emailReg')" class="help is-danger" v-cloak>{{ errors.first('emailReg') }}</span>
+                        </div>
+                        <div class='form-group'>
+                            <label for='password'>Password</label>
+                            <input v-validate="{
+                                           required: true
+                                           , min: 5
+                                           , max:64
+                                           , regex: '^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!$%^&*-]).{8,}$' }"
+                                   v-bind:class="{error :errors.has('password')}"
+                                   name="passwordReg" v-model="registerForm.password" ref="password"
+                                   id='passwordReg' type='password' class='form-control' placeholder='......'>
+                            <span v-show="errors.has('passwordReg')" class="help is-danger" v-cloak>{{ errors.first('passwordReg') }}</span>
+                        </div>
+                        <div class='form-group'>
+                            <label for='passwordc'>Confirm Password</label>
+                            <input v-validate="{confirmed: 'password', required: true}"
+                                   v-bind:class="{error :errors.has('confirmation')}"
+                                   name="confirmation" v-model="registerForm.passwordConfirm"
+                                   id='passwordc' type='password' class='form-control' placeholder='......'>
+                            <span v-show="errors.has('confirmation')" class="help is-danger" v-cloak>{{ errors.first('confirmation') }}</span>
+                        </div>
+                        <button v-bind:class="{ disabled: !isFormDirty() || !isFormValid()  }"
+                                type='submit' class='btn btn-block btn-secondary btn-rounded btn-xl'>
+                            Sign Up
+                        </button>
+                    </form>
+                    <br>
+                    <p class=' text-small mb0'>Forget your password? <a href='/recover' class='btn btn-underline'>Recover</a></p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+
+    (function (app, vue, usersService, alertService, contractsService) {
+
+        let vSettings = {
+            el: '#vueECRegister',
+
+            created: function () {
+                if (webApp.layout.model.item != null) {
+                    this.getEmail();
+
+                }
+            }
+
+        };
+
+        vSettings.methods = {
+
+            getEmail() {
+
+                usersService.registerEmailByToken(webApp.layout.model.item)
+                    .then(this.onGetEmailSuccess, this.onRegisterError)
+            },
+
+            onSubmit() {
+
+                if (!this.$validator.errors.any()) {
+                    usersService.register(this.$data.registerForm)
+                        .then(this.onRegisterSuccess, this.onRegisterError);
+                }
+
+                return false;
+
+            },
+
+            onGetEmailSuccess(resp) {
+
+                let email = resp.item;
+
+                this.registerForm.email = email.email;
+                this.participationObj.contractExternalId = email.contractExId;
+                this.participationObj.email = email.email;
+
+            },
+
+            addAsParticipant(userId) {
+
+                this.participationObj.userId = userId;
+                console.log(this.participationObj);
+
+                contractsService.addNewRegisteredAsParticipant(this.participationObj)
+                    .then(this.addAsParticipantSuccess, this.addAsParticipantError);
+            },
+
+
+            onRegisterSuccess(resp) {
+                if (webApp.layout.model.item != null) {
+                    this.addAsParticipant(resp.item);
+
+                } else {
+                    this.registrationSuccess();
+                    this.resetForm();
+
+                }
+
+            },
+
+            addAsParticipantSuccess(resp) {
+
+                this.registrationSuccess();
+                this.resetForm();
+
+            },
+
+            addAsParticipantError(resp) {
+                console.log(resp);
+            },
+
+            onRegisterError(resp) {
+
+                if (resp.responseText == "null") {
+                    alertService.error('Ooops!', 'User Already Registered')
+
+                } else {
+                    alertService.error('Ooops!', 'There has been an error')
+                }
+
+            },
+
+            resetForm() {
+                this.$data.registerForm.password = "";
+                this.$data.registerForm.passwordConfirm = "";
+                this.$data.registerForm.firstName = "";
+                this.$data.registerForm.lastName = "";
+            }
+
+            , registrationSuccess() {
+
+                swal({
+                    title: 'Registration Successful',
+                    text: 'Please check your inbox for email confirmation.',
+                    type: 'success',
+                    confirmButtonColor: '#549630',
+                }).then((result) => {
+                    if (result.value) {
+                        location.assign("/login");
+                    }
+                })
+
+            }
+
+        };
+
+        app.core.validationHelpers.merge(vSettings.methods);
+
+        vSettings.data = () => {
+            return {
+                registerForm: {
+                    email: null
+                    , password: null
+                    , passwordConfirm: null
+                    , firstName: null
+                    , lastName: null
+                },
+                participationObj: {
+                    userId: null,
+                    contractExternalId: null,
+                    email: null,
+                    token: webApp.layout.model.item
+                }
+            }
+        };
+
+        app.page.vueRegister = new Vue(vSettings);
+
+        // Custom Message for confirmation input
+        const dictionary = {
+            custom: {
+                confirmation: {
+                    confirmed: 'Confirmation does not match password'
+                }
+            }
+        };
+
+        app.page.vueRegister.$validator.localize('en', dictionary);
+
+    })(webApp, Vue, webApp.services.users, webApp.services.alerts, webApp.services.contracts);
+
+</script>
+
