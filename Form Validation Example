@@ -84,151 +84,168 @@
 <script>
 
 
-    (function (app, vue, usersService, alertService, contractsService) {
+     (function (app, vue, usersService, alertService, contractsService) {
 
-        let vSettings = {
-            el: '#vueECRegister',
+            let vSettings = {
+                el: '#vueECRegister',
 
-            created: function () {
-                if (webApp.layout.model.item != null) {
-                    this.getEmail();
+                created: function () {
+                    if (webApp.layout.model.item != null) {
+                        this.getEmail();
 
-                }
-            }
+                    }
+                },
 
-        };
-
-        vSettings.methods = {
-
-            getEmail() {
-
-                usersService.registerEmailByToken(webApp.layout.model.item)
-                    .then(this.onGetEmailSuccess, this.onRegisterError)
-            },
-
-            onSubmit() {
-
-                if (!this.$validator.errors.any()) {
-                    usersService.register(this.$data.registerForm)
-                        .then(this.onRegisterSuccess, this.onRegisterError);
+                mounted() {
+                    this.checkformSessionCookie();
                 }
 
-                return false;
 
-            },
+            };
 
-            onGetEmailSuccess(resp) {
+            vSettings.methods = {
 
-                let email = resp.item;
+                getEmail() {
 
-                this.registerForm.email = email.email;
-                this.participationObj.contractExternalId = email.contractExId;
-                this.participationObj.email = email.email;
+                    usersService.registerEmailByToken(webApp.layout.model.item)
+                        .then(this.onGetEmailSuccess, this.onRegisterError)
+                },
 
-            },
+                onSubmit() {
 
-            addAsParticipant(userId) {
+                 
+                    if (!this.$validator.errors.any()) {
+                        usersService.register(this.$data.registerForm)
+                            .then(this.onRegisterSuccess, this.onRegisterError);
+                    }
 
-                this.participationObj.userId = userId;
-                console.log(this.participationObj);
+                    return false;
 
-                contractsService.addNewRegisteredAsParticipant(this.participationObj)
-                    .then(this.addAsParticipantSuccess, this.addAsParticipantError);
-            },
+                },
+
+                onGetEmailSuccess(resp) {
+
+                    let email = resp.item;
+
+                    this.registerForm.email = email.email;
+                    this.participationObj.contractExternalId = email.contractExId;
+                    this.participationObj.email = email.email;
+
+                },
+
+                addAsParticipant(userId) {
+
+                    this.participationObj.userId = userId;
+                    console.log(this.participationObj);
+
+                    contractsService.addNewRegisteredAsParticipant(this.participationObj)
+                        .then(this.addAsParticipantSuccess, this.addAsParticipantError);
+                },
 
 
-            onRegisterSuccess(resp) {
-                if (webApp.layout.model.item != null) {
-                    this.addAsParticipant(resp.item);
+                onRegisterSuccess(resp) {
+                    if (webApp.layout.model.item != null) {
+                        this.addAsParticipant(resp.item);
 
-                } else {
+                    } else {
+                        this.registrationSuccess();
+                        this.resetForm();
+
+                    }
+
+                },
+
+                addAsParticipantSuccess(resp) {
+
                     this.registrationSuccess();
                     this.resetForm();
 
-                }
-
-            },
-
-            addAsParticipantSuccess(resp) {
-
-                this.registrationSuccess();
-                this.resetForm();
-
-            },
-
-            addAsParticipantError(resp) {
-                console.log(resp);
-            },
-
-            onRegisterError(resp) {
-
-                if (resp.responseText == "null") {
-                    alertService.error('Ooops!', 'User Already Registered')
-
-                } else {
-                    alertService.error('Ooops!', 'There has been an error')
-                }
-
-            },
-
-            resetForm() {
-                this.$data.registerForm.password = "";
-                this.$data.registerForm.passwordConfirm = "";
-                this.$data.registerForm.firstName = "";
-                this.$data.registerForm.lastName = "";
-            }
-
-            , registrationSuccess() {
-
-                swal({
-                    title: 'Registration Successful',
-                    text: 'Please check your inbox for email confirmation.',
-                    type: 'success',
-                    confirmButtonColor: '#549630',
-                }).then((result) => {
-                    if (result.value) {
-                        location.assign("/login");
-                    }
-                })
-
-            }
-
-        };
-
-        app.core.validationHelpers.merge(vSettings.methods);
-
-        vSettings.data = () => {
-            return {
-                registerForm: {
-                    email: null
-                    , password: null
-                    , passwordConfirm: null
-                    , firstName: null
-                    , lastName: null
                 },
-                participationObj: {
-                    userId: null,
-                    contractExternalId: null,
-                    email: null,
-                    token: webApp.layout.model.item
+
+                addAsParticipantError(resp) {
+                    console.log(resp);
+                },
+
+                onRegisterError(resp) {
+
+                    if (resp.responseText == "null") {
+                        alertService.error('Ooops!', 'User Already Registered')
+
+                    } else {
+                        alertService.error('Ooops!', 'There has been an error')
+                    }
+
+                },
+
+                resetForm() {
+                    this.$data.registerForm.password = "";
+                    this.$data.registerForm.passwordConfirm = "";
+                    this.$data.registerForm.firstName = "";
+                    this.$data.registerForm.lastName = "";
                 }
-            }
-        };
 
-        app.page.vueRegister = new Vue(vSettings);
+                , registrationSuccess() {
 
-        // Custom Message for confirmation input
-        const dictionary = {
-            custom: {
-                confirmation: {
-                    confirmed: 'Confirmation does not match password'
+                    swal({
+                        title: 'Registration Successful',
+                        text: 'Please check your inbox for email confirmation.',
+                        type: 'success',
+                        confirmButtonColor: '#549630',
+                    }).then((result) => {
+                        if (result.value) {
+                            location.assign("/login");
+                        }
+                        })
+
+                    sessionStorage.clear();
                 }
-            }
-        };
 
-        app.page.vueRegister.$validator.localize('en', dictionary);
+                , checkformSessionCookie() { 
+                    sessionStorage.firstName ? this.$data.registerForm.firstName = sessionStorage.firstName : false
+                    sessionStorage.lastName ? this.$data.registerForm.lastName = sessionStorage.lastName : false
+                    sessionStorage.email ? this.$data.registerForm.email = sessionStorage.email : false
+                }
 
-    })(webApp, Vue, webApp.services.users, webApp.services.alerts, webApp.services.contracts);
+                , storeSessionCookie(inputName) {
+                    sessionStorage[inputName] = this.$data.registerForm[inputName];
+                }
+
+            };
+
+            app.core.validationHelpers.merge(vSettings.methods);
+
+            vSettings.data = () => {
+                return {
+                    registerForm: {
+                        email: null
+                        , password: null
+                        , passwordConfirm: null
+                        , firstName: null
+                        , lastName: null
+                    },
+                    participationObj: {
+                        userId: null,
+                        contractExternalId: null,
+                        email: null,
+                        token: webApp.layout.model.item
+                    }
+                }
+            };
+
+            app.page.vueRegister = new Vue(vSettings);
+
+            // Custom Message for confirmation input
+            const dictionary = {
+                custom: {
+                    confirmation: {
+                        confirmed: 'Confirmation does not match password'
+                    }
+                }
+            };
+
+            app.page.vueRegister.$validator.localize('en', dictionary);
+
+        })(webApp, Vue, webApp.services.users, webApp.services.alerts, webApp.services.contracts);
 
 </script>
 
