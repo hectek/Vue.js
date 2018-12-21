@@ -1,0 +1,68 @@
+
+<div class="container pb60" id="vContacts">
+    <hr class="pt60">
+    <div class="center-title text-center mb50">
+        <h4 class="">Your Contacts</h4>
+    </div>
+    <div class="row" v-cloak>
+        <div class="col-md-6 col-lg-3 mb50 text-center" v-for="contact in contactItems" v-if="contact.id != userId">
+            <div class="contactImg" :style="{ backgroundImage:  `url('${contact.imageUrl}')`}">
+                <img :src="'/Content/images/DefaultImages/avtar.png'" alt="" class="img-fluid img-thumbnail mb20" v-if="contact.imageUrl == null">
+
+            </div>
+
+            <h4><a :href="'contacts/' + contact.userExternalId + '/contracts'"><span>{{contact.firstName}}</span> <span>{{contact.lastName}}</span></a></h4>
+            <span class="font600 text-muted">{{contact.email}}</span>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    (function (app, vue, contactsService) {
+
+        let vSettings = {
+        
+            el: "#vContacts"
+
+            , mounted() {
+                this.getContacts()
+            }
+            
+        };
+
+        vSettings.methods = {
+
+            getContacts() {
+                contactsService.getAll()
+                    .then(this.getAllSuccess, this.getAllError);
+            }
+
+            , getAllSuccess(resp) {
+                if (resp.items) {
+                    this.contactItems = resp.items;
+                    this.userId = webApp.layout.model.item;
+                }
+            }
+
+            , getAllError(resp) {
+                console.log("Some error message");
+            }
+
+        };
+
+        vSettings.data = function () {
+            return {
+                contactItems: [],
+                userId: ""
+            }
+        };
+
+        app.page.contacts = new Vue(vSettings);
+
+
+    })(webApp, Vue, webApp.services.contacts);
+
+
+</script>
+
